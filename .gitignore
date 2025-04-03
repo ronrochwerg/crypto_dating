@@ -2,3 +2,4 @@ cryptoenv/
 cryptoenv_wsl/
 test.py
 __pycache__
+wsl_env/
