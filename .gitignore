@@ -1,2 +1,4 @@
 cryptoenv/
+cryptoenv_wsl/
 test.py
+__pycache__

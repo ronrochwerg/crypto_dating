@@ -1,0 +1,10 @@
+#!/bin/sh
+'''exec' /mnt/c/Users/rochw/Documents/school_stuff/2024-2025_year/2025_Winter/CISC_878_Cryptography/Project/crypto_dating/wsl_env/bin/python3 "$0" "$@"
+' '''
+# -*- coding: utf-8 -*-
+import re
+import sys
+from fontTools.subset import main
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(main())
