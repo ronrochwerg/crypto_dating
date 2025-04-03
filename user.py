@@ -17,19 +17,20 @@ def mpyc_computation(size, target_user, user_data, verbose=False):
     # Contact server to make sure it's ready
     response = requests.post("http://localhost:5000/match_user_mpyc", data={'size':size, 'target_user':target_user, 'verbose':verbose})
 
-    # Call mpyc_compute.py as Party 1
-    result = subprocess.run(
-        ["python3", "mpyc_test.py", repr(user_data[0]), repr(user_data[1]), repr(verbose), "-M2", "-I1", "--no-log"],
-        capture_output=True, text=True
-    )
-
-    if result.returncode != 0:
-        print("Error: Computation failed.")
-        exit()
     if verbose:
+        result = subprocess.run(
+            ["python3", "mpyc_test.py", repr(user_data[0]), repr(user_data[1]), repr(verbose), "-M3", "-I0"],
+            capture_output=True, text=True
+        )
+        
         print(f"Secure dot product result:\n {result.stdout.strip()}")
+    else:
+        result = subprocess.run(
+            ["python3", "mpyc_test.py", repr(user_data[0]), repr(user_data[1]), repr(verbose), "-M3", "-I0", "--no-log"],
+            capture_output=True, text=True
+        )
 
-def test_mpyc():
+def test_mpyc(verbose=False):
     data = load_json_file('user_data_mpyc.json')
     average_times = []
 
@@ -38,7 +39,7 @@ def test_mpyc():
         for target_user in range(100):
             time.sleep(0.2)
             start_time = time.time()
-            mpyc_computation(size, target_user, user_data)
+            mpyc_computation(size, target_user, user_data, verbose=verbose)
             end_time = time.time()
             times.append(end_time - start_time)
         
@@ -78,11 +79,11 @@ def psi_computation(user_id, data, server_data_type):
     print(intersection)
 
 def main():
-    # test_mpyc()
-    data = load_json_file('user_data_psi.json')
-    user_data = data['10'][0]
-    threshold = data['10'][1]
-    psi_computation(0, user_data, 'raw')
+    test_mpyc(verbose=True)
+    # data = load_json_file('user_data_psi.json')
+    # user_data = data['10'][0]
+    # threshold = data['10'][1]
+    # psi_computation(0, user_data, 'raw')
 
 if __name__ == "__main__":
     # Run the main function within the asyncio event loop

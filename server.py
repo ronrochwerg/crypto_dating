@@ -22,18 +22,45 @@ def compute():
 
     def mpyc_task(size, target_user, verbose):
         # time.sleep(1)
-        data = load_json_file('server_data_mpyc.json')
-        target_user_data = data[size][target_user]
+        print(f"Running MPyC computation for size {size} and target user {target_user}")
+        if target_user is not None:
+            time.sleep(0.1)
+            data = load_json_file('server_data_mpyc.json')
+            target_user_data = data[size][target_user]
+            
+            
+            if verbose != "False":
+                array = target_user_data[0]
+                threshold = target_user_data[1]
+                print(f"My array is: {array}")
+                print(f"My threshold is: {threshold}")
+                result = subprocess.run(
+                ["python3", "mpyc_test.py", repr(target_user_data[0]), repr(target_user_data[1]), repr(verbose), "-M2", "-I1"],
+                capture_output=True, text=True
+                )
+                print(f"Secure dot product result:\n {result.stdout.strip()}")
+            else:
+                result = subprocess.run(
+                ["python3", "mpyc_test.py", repr(target_user_data[0]), repr(target_user_data[1]), repr(verbose), "-M3", "-I1", "--no-log"],
+                capture_output=True, text=True
+                )
+        else:
+            if verbose != "False":
+                result = subprocess.run(
+                ["python3", "mpyc_test.py", repr(None), repr(None), repr(verbose), "-M3", "-I2"],
+                capture_output=True, text=True
+                )
+                print(f"Secure dot product result:\n {result.stdout.strip()}")
+            else:
+                result = subprocess.run(
+                ["python3", "mpyc_test.py", repr(None), repr(None), repr(verbose), "-M3", "-I2", "--no-log"],
+                capture_output=True, text=True
+                )
         
-        result = subprocess.run(
-        ["python3", "mpyc_test.py", repr(target_user_data[0]), repr(target_user_data[1]), repr(verbose), "-M2", "-I0", "--no-log"],
-        capture_output=True, text=True
-        )
-        if verbose != "False":
-            print(f"Secure dot product result:\n {result.stdout.strip()}")
-        
-    thread = threading.Thread(target=mpyc_task, args=(size, target_user, verbose))
-    thread.start()
+    thread1 = threading.Thread(target=mpyc_task, args=(size, target_user, verbose))
+    # thread2 = threading.Thread(target=mpyc_task, args=(None, None, verbose))
+    thread1.start()
+    # thread2.start()
     return {"message": "Accepted"}, 202
 
 # Setup psi class to hold server key created at every match
@@ -80,8 +107,7 @@ def gcssetup():
     user_id = pkey.get_user_id()
     data = load_json_file('server_data_psi.json')
     user_data = data[user_id][0]
-    threshold = data[user_id][1]
-    return s.CreateSetupMessage(fpr, num_client_inputs, user_data, psi.DataStructure.GCS).SerializeToString(), threshold
+    return s.CreateSetupMessage(fpr, num_client_inputs, user_data, psi.DataStructure.GCS).SerializeToString()
 
 @app.route('/rawsetup', methods=['GET'])
 def rawsetup():
@@ -89,8 +115,7 @@ def rawsetup():
     user_id = pkey.get_user_id()
     data = load_json_file('server_data_psi.json')
     user_data = data[user_id][0]
-    threshold = data[user_id][1]
-    return s.CreateSetupMessage(fpr, num_client_inputs, user_data, psi.DataStructure.RAW).SerializeToString(), threshold
+    return s.CreateSetupMessage(fpr, num_client_inputs, user_data, psi.DataStructure.RAW).SerializeToString()
 
 @app.route('/bloomsetup', methods=['GET'])
 def bloomsetup():
@@ -98,8 +123,7 @@ def bloomsetup():
     user_id = pkey.get_user_id()
     data = load_json_file('server_data_psi.json')
     user_data = data[user_id][0]
-    threshold = data[user_id][1]
-    return s.CreateSetupMessage(fpr, num_client_inputs, user_data, psi.DataStructure.BLOOM_FILTER).SerializeToString(), threshold
+    return s.CreateSetupMessage(fpr, num_client_inputs, user_data, psi.DataStructure.BLOOM_FILTER).SerializeToString()
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

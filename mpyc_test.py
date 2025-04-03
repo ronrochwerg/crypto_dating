@@ -73,31 +73,40 @@ from mpyc.runtime import mpc
 async def main(input_array, threshold, verbose):
     """Run the secure dot product computation with the given input array."""
     await mpc.start()
+    m = len(mpc.parties)
+    t = m//2
+    matchers = list(range(t+1))
     secint = mpc.SecInt()
-
-    # Parse input vector
-    x = ast.literal_eval(input_array)
-    t = int(threshold)
+    
+    if mpc.pid in matchers:
+        # Parse input vector
+        x = ast.literal_eval(input_array)
+        t = int(threshold)
+    else:
+        # Dummy values for non-matchers
+        x = [None]
+        t = None
     
     # Securely input the vector
-    arrays = mpc.input([secint(xi) for xi in x])
-    thresholds = mpc.input(secint(t))
-
-    # Compute secure dot product
-    result = await mpc.output(mpc.in_prod(arrays[0], arrays[1]) >= mpc.max(thresholds))
+    arrays = mpc.input([secint(xi) for xi in x], senders=matchers)
+    thresholds = mpc.input(secint(t), senders=matchers)
     
-    await mpc.shutdown()
-    if verbose != 'False':
-        dot_product = await mpc.output(mpc.in_prod(arrays[0], arrays[1]))
-        plaintex_thresholds = await mpc.output(thresholds)
 
-        # Print result so the caller can capture it
-        print(plaintex_thresholds)
-        print(dot_product)
-        print(result)
+    result = await mpc.output(mpc.sum([mpc.eq(arrays[0][i], arrays[1][i]) for i in range(len(arrays[0]))]) >= mpc.max(thresholds), receivers=matchers)
+    
+    if verbose != 'False':
+        print(f"\nMy array shares are:")
+        [print(f"{arrays[i]}\n") for i in range(len(arrays))]
+        print(f"My threshold shares are:\n{thresholds}\n")
+        common = await mpc.output(mpc.sum([mpc.eq(arrays[0][i], arrays[1][i]) for i in range(len(arrays[0]))]))
+        print(f"Number of common elements: {common}")
+        print(f"The result: {'Match' if result else 'No Match'}")
+        await mpc.shutdown()   
+    else:
+        await mpc.shutdown()
+        
 
 if __name__ == "__main__":
-
     input_array = sys.argv[1]  # First argument is the input array
     threshold = sys.argv[2]  # Second argument is the threshold
     verbose = sys.argv[3]  # Third argument is the verbosity flag
