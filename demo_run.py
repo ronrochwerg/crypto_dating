@@ -62,7 +62,7 @@ def main():
     print(f"My threshold is: {threshold}")
     mpyc_computation('0', '0', (array, threshold))
     
-    print('\n\n*'*150)
+    print('\n\n'+'*'*100)
     print("\n\nStarting PSI computation...\n")
     data = load_json_file('user_data_psi.json')
     array = data['0'][0]
