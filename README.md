@@ -36,19 +36,19 @@ Crypto Dating is a project that combines cryptographic principles with a dating 
 1. **Generate Demo Data**  
     Run the script to generate demo data (fill in the data as specified by the script):
     ```bash
-    python demo_data.py
+    python3 demo_data.py
     ```
 
 2. **Start the Server**  
     Launch the server:
     ```bash
-    python server.py
+    python3 server.py
     ```
 
 3. **Run the Demo**  
     In a separate terminal, execute the demo run script:
     ```bash
-    python demo_run.py
+    python3 demo_run.py
     ```
 
 ## Notes
