@@ -15,19 +15,17 @@ def load_json_file(filename):
 
 @app.route('/match_user_mpyc', methods=['POST'])
 def compute():
-    """Runs the secure computation as Party 0 and returns the result."""
-    size = request.form.get('size')
+    # Runs the mpyc computation as the other user
     target_user = request.form.get('target_user')
     verbose = request.form.get('verbose')
 
-    def mpyc_task(size, target_user, verbose):
-        # time.sleep(1)
-        print(f"Running MPyC computation for size {size} and target user {target_user}")
+    # this is used to run the mpyc computation asyncronously so that the user file does not have to wait for a return
+    def mpyc_task(target_user, verbose):
+        # start the mpyc computaiton absed on verbosity and whether you are a user or a 3rd party helper
         if target_user is not None:
-            time.sleep(0.1)
+            # time.sleep(0.1) # might be needed for 3 party computation so the server does not get stuck on the mpyc_test call
             data = load_json_file('server_data_mpyc.json')
-            target_user_data = data[size][target_user]
-            
+            target_user_data = data[target_user]
             
             if verbose != "False":
                 array = target_user_data[0]
@@ -38,32 +36,33 @@ def compute():
                 ["python3", "mpyc_test.py", repr(target_user_data[0]), repr(target_user_data[1]), repr(verbose), "-M2", "-I1"],
                 capture_output=True, text=True
                 )
-                print(f"Secure dot product result:\n {result.stdout.strip()}")
             else:
                 result = subprocess.run(
-                ["python3", "mpyc_test.py", repr(target_user_data[0]), repr(target_user_data[1]), repr(verbose), "-M3", "-I1", "--no-log"],
+                ["python3", "mpyc_test.py", repr(target_user_data[0]), repr(target_user_data[1]), repr(verbose), "-M2", "-I1", "--no-log"],
                 capture_output=True, text=True
                 )
-        else:
+        else: #third party helper does not have any data to send in
             if verbose != "False":
                 result = subprocess.run(
                 ["python3", "mpyc_test.py", repr(None), repr(None), repr(verbose), "-M3", "-I2"],
                 capture_output=True, text=True
                 )
-                print(f"Secure dot product result:\n {result.stdout.strip()}")
             else:
                 result = subprocess.run(
                 ["python3", "mpyc_test.py", repr(None), repr(None), repr(verbose), "-M3", "-I2", "--no-log"],
                 capture_output=True, text=True
                 )
-        
-    thread1 = threading.Thread(target=mpyc_task, args=(size, target_user, verbose))
+    
+    # thread the computaitons so they can be run and send a return to the user.
+    # uncomment these lines for 3rd party helper to run as well (other files will have to be changed to -M3)
+    thread1 = threading.Thread(target=mpyc_task, args=(target_user, verbose))
     # thread2 = threading.Thread(target=mpyc_task, args=(None, None, verbose))
     thread1.start()
     # thread2.start()
     return {"message": "Accepted"}, 202
 
-# Setup psi class to hold server key created at every match
+# Note that much of this code is taking from: https://github.com/mshearer0/HandsOnEntityResolution/blob/main/Chapter10Server.py
+# there are additions to make it work with the dataset and allowing the user to specify the user_id they want to connect with
 class psikey(object):
     def __init__(self):
         self.key = None
